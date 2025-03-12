@@ -60,12 +60,12 @@ public class GrafoTransporte {
 
     // Dijkstra
     public Map<Parada, Double> dijkstra(Parada origen, String criterio) {
-        // Validar criterio
+        // Validacion de  criterio
         if (!Arrays.asList("tiempo", "distancia", "costo").contains(criterio)) {
             throw new IllegalArgumentException("Criterio inválido");
         }
 
-        // Aplicar el criterio a todas las rutas temporalmente para la búsqueda
+        // Aplicacion del criterio a todas las rutas temporalmente para la búsqueda
         for (Ruta r : rutas) {
             DefaultWeightedEdge edge = edgeMap.get(r);
             if (edge != null) {
