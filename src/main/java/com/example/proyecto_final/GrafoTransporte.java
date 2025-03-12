@@ -94,7 +94,7 @@ public class GrafoTransporte {
         return resultados;
     }
 
-    //Mis Getters
+    //Mis Getters.
     public ObservableList<Parada> getParadas() { return paradas; }
     public ObservableList<Ruta> getRutas() { return rutas; }
 }
