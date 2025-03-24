@@ -23,7 +23,7 @@ public class Ruta {
         this.tiempo = tiempo;
         this.distancia = distancia;
         this.costo = costo;
-        this.criterio = "tiempo"; // Default criteria
+        this.criterio = "tiempo"; // un Default criterio
     }
 
     // Getters

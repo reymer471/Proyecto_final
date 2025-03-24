@@ -106,6 +106,7 @@ public class TransporteApp extends Application {
 
         // Listeners
         grafo.getParadas().addListener((ListChangeListener<Parada>) c -> {
+            //c.getList()
             cbOrigen.getItems().setAll(grafo.getParadas());
             cbDestino.getItems().setAll(grafo.getParadas());
             cbEliminarParada.getItems().setAll(grafo.getParadas());
