@@ -358,4 +358,7 @@ public class GrafoTransporte {
     public List<Ruta> getRutasPorLinea(String linea) {
         return rutasPorLinea.getOrDefault(linea, new ArrayList<>());
     }
+    public Map<Ruta, DefaultWeightedEdge> getEdgeMap() {
+        return edgeMap;
+    }
 }

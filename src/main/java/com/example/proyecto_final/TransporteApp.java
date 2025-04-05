@@ -10,10 +10,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class TransporteApp extends Application {
@@ -24,17 +29,65 @@ public class TransporteApp extends Application {
     private List<Line> lineasRutaActual = new java.util.ArrayList<>();
     private List<Circle> circulosRutaActual = new java.util.ArrayList<>();
 
+    // Modo de visualización
+    private enum ModoVisualizacion { NORMAL, RUTAS, MST }
+    private ModoVisualizacion modoActual = ModoVisualizacion.NORMAL;
+
     @Override
     public void start(Stage stage) {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(15));
         root.setLeft(crearControles());
-        root.setCenter(mapa);
+        root.setCenter(crearPanelCentral());
 
         stage.setScene(new Scene(root, 1200, 800));
         stage.setTitle("Sistema de Transporte Inteligente");
         stage.show();
     }
+
+    private Pane crearPanelCentral() {
+        // Crear un contenedor para el mapa y la leyenda
+        BorderPane panelCentral = new BorderPane();
+        panelCentral.setCenter(mapa);
+        panelCentral.setBottom(crearLeyenda());
+        return panelCentral;
+    }
+
+    private HBox crearLeyenda() {
+        HBox leyenda = new HBox(20);
+        leyenda.setPadding(new Insets(10));
+        leyenda.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #cccccc;");
+
+        // Añadir leyenda para cada línea de transporte
+        String[] lineas = {"L1", "L2", "L3", "L4", "L5"};
+        Color[] colores = {Color.RED, Color.BLUE, Color.GREEN, Color.PURPLE, Color.ORANGE};
+
+        for (int i = 0; i < lineas.length; i++) {
+            HBox item = new HBox(10);
+            Rectangle rect = new Rectangle(20, 10, colores[i]);
+            Label label = new Label(lineas[i]);
+            item.getChildren().addAll(rect, label);
+            leyenda.getChildren().add(item);
+        }
+
+        // Añadir leyenda para paradas
+        HBox paradaItem = new HBox(10);
+        Circle circulo = new Circle(5, Color.GREEN);
+        Label paradaLabel = new Label("Parada");
+        paradaItem.getChildren().addAll(circulo, paradaLabel);
+        leyenda.getChildren().add(paradaItem);
+
+        // Añadir información sobre el modo de visualización actual
+        Label modoLabel = new Label("Modo: Normal");
+        modoLabel.setFont(Font.font(14));
+        leyenda.getChildren().add(modoLabel);
+
+        return leyenda;
+    }
+
+
+    //el control de la app aqui
+
 
     private VBox crearControles() {
         VBox vbox = new VBox(10);
@@ -115,9 +168,23 @@ public class TransporteApp extends Application {
         Button btnRutasAlternativas = new Button("Mostrar Rutas Alternativas");
         btnRutasAlternativas.setOnAction(e -> mostrarRutasAlternativas(cbRutaOrigen, cbRutaDestino, cbRutaCriterio));
 
+        // --- VISUALIZACIONES ESPECIALES ---
+        Button btnMostrarLineas = new Button("Mostrar Líneas de Transporte");
+        btnMostrarLineas.setOnAction(e -> mostrarLineasTransporte());
+
+        ComboBox<String> cbMSTCriterio = new ComboBox<>(FXCollections.observableArrayList("tiempo", "distancia", "costo"));
+        cbMSTCriterio.setValue("tiempo");
+        Button btnMostrarMST = new Button("Mostrar Árbol de Expansión Mínima");
+        btnMostrarMST.setOnAction(e -> mostrarMST(cbMSTCriterio.getValue()));
+
+        Button btnModoNormal = new Button("Volver a Modo Normal");
+        btnModoNormal.setOnAction(e -> {
+            modoActual = ModoVisualizacion.NORMAL;
+            actualizarMapa();
+        });
+
         // Listeners
         grafo.getParadas().addListener((ListChangeListener<Parada>) c -> {
-            //c.getList()
             cbOrigen.getItems().setAll(grafo.getParadas());
             cbDestino.getItems().setAll(grafo.getParadas());
             cbEliminarParada.getItems().setAll(grafo.getParadas());
@@ -174,13 +241,27 @@ public class TransporteApp extends Application {
                 new Label("Destino:"), cbRutaDestino,
                 new Label("Criterio:"), cbRutaCriterio,
                 btnCalcularRuta,
-                btnRutasAlternativas
+                btnRutasAlternativas,
+                new Separator(),
+                new Label("--- VISUALIZACIONES ESPECIALES ---"),
+                btnMostrarLineas,
+                new Label("Criterio para MST:"), cbMSTCriterio,
+                btnMostrarMST,
+                btnModoNormal
         );
 
         return new VBox(scrollPane);
     }
 
-    // Métodos de Acción
+
+
+
+    // La parte de Parada es esta;
+
+
+
+
+
     private void agregarParada(TextField... campos) {
         try {
             Parada p = new Parada(
@@ -220,6 +301,14 @@ public class TransporteApp extends Application {
         }
     }
 
+
+
+
+    //La parte de ruta es esta;
+
+
+
+
     private void agregarRuta(ComboBox<Parada> origen, ComboBox<Parada> destino,
                              TextField tiempo, TextField distancia, TextField costo, TextField linea) {
         try {
@@ -228,13 +317,18 @@ public class TransporteApp extends Application {
             if (origen.getValue().equals(destino.getValue()))
                 throw new IllegalArgumentException("Origen y destino deben ser diferentes");
 
+            String lineaTexto = linea.getText();
+            if (lineaTexto == null || lineaTexto.trim().isEmpty()) {
+                lineaTexto = "L1"; // valor por defecto
+            }
+
             Ruta r = new Ruta(
                     origen.getValue(),
                     destino.getValue(),
                     Double.parseDouble(tiempo.getText()),
                     Double.parseDouble(distancia.getText()),
                     Double.parseDouble(costo.getText()),
-                    linea.getText() // Usar la línea especificada
+                    lineaTexto // Usar la línea especificada
             );
             grafo.agregarRuta(r);
             actualizarMapa();
@@ -427,12 +521,12 @@ public class TransporteApp extends Application {
                 }
             }
 
-            // Mostrar diálogo con las rutas alternativas
+            // Mostrador de los diferentes diálogo con las rutas alternativas etc..  :]
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Rutas Alternativas");
             alert.setHeaderText("De " + o.getNombre() + " a " + d.getNombre());
 
-            // Para textos largos, usamos TextArea en lugar de simple texto
+            // Para textos largos uso  TextArea
             TextArea textArea = new TextArea(mensaje.toString());
             textArea.setEditable(false);
             textArea.setWrapText(true);
@@ -441,7 +535,7 @@ public class TransporteApp extends Application {
             alert.getDialogPane().setContent(textArea);
             alert.show();
 
-            // Resaltar la primera ruta alternativa
+            // Para resaltar la primera ruta alternativa
             if (!alternativas.isEmpty()) {
                 resaltarRuta(alternativas.get(0));
             }
@@ -451,7 +545,192 @@ public class TransporteApp extends Application {
         }
     }
 
-    // Método auxiliar para calcular el valor total de una ruta según un criterio
+    // Metodo para mostrar líneas de transporte de manera visual
+    private void mostrarLineasTransporte() {
+        try {
+            // Cambiar al modo de visualización de líneas
+            modoActual = ModoVisualizacion.RUTAS;
+
+            // Recolectar todas las líneas disponibles
+            List<String> todasLasLineas = grafo.getTodasLasLineas();
+
+            if (todasLasLineas.isEmpty()) {
+                mostrarError("No hay líneas de transporte definidas");
+                return;
+            }
+
+            // Crear un mapa de colores para cada línea
+            Map<String, Color> coloresPorLinea = new HashMap<>();
+            Color[] colores = {Color.RED, Color.BLUE, Color.GREEN, Color.PURPLE, Color.ORANGE,
+                    Color.BROWN, Color.DARKGREEN, Color.DARKBLUE, Color.MAGENTA, Color.GOLD};
+
+            for (int i = 0; i < todasLasLineas.size(); i++) {
+                coloresPorLinea.put(todasLasLineas.get(i), colores[i % colores.length]);
+            }
+
+            // Limpiar el mapa actual
+            mapa.getChildren().clear();
+
+            // Dibujar paradas primero (para que queden debajo de las líneas)
+            grafo.getParadas().forEach(p -> {
+                Circle punto = new Circle(p.getX(), p.getY(), 8, Color.GREEN);
+                Label etiqueta = new Label(p.getNombre());
+                etiqueta.setLayoutX(p.getX() + 10);
+                etiqueta.setLayoutY(p.getY() - 15);
+                etiqueta.setTextFill(Color.DARKBLUE);
+                mapa.getChildren().addAll(punto, etiqueta);
+            });
+
+            // Dibujar cada línea por separado
+            for (String linea : todasLasLineas) {
+                Color colorLinea = coloresPorLinea.getOrDefault(linea, Color.GRAY);
+                List<Ruta> rutasDeEstaLinea = grafo.getRutasPorLinea(linea);
+
+                // Dibujar rutas de esta línea
+                for (Ruta r : rutasDeEstaLinea) {
+                    Line lineaGrafica = new Line(
+                            r.getOrigen().getX(), r.getOrigen().getY(),
+                            r.getDestino().getX(), r.getDestino().getY()
+                    );
+                    lineaGrafica.setStroke(colorLinea);
+                    lineaGrafica.setStrokeWidth(3); // línea más gruesa para destacar
+                    mapa.getChildren().add(lineaGrafica);
+
+                    // Mostrar información mínima para no sobrecargar la vista
+                    Text texto = new Text(
+                            (r.getOrigen().getX() + r.getDestino().getX()) / 2,
+                            (r.getOrigen().getY() + r.getDestino().getY()) / 2,
+                            linea
+                    );
+                    texto.setFill(colorLinea);
+                    mapa.getChildren().add(texto);
+                }
+            }
+
+            // Mostrar título de la visualización
+            Text titulo = new Text(20, 20, "Visualización de Líneas de Transporte");
+            titulo.setFont(Font.font(18));
+            titulo.setFill(Color.BLACK);
+            mapa.getChildren().add(titulo);
+
+            // Mostrar leyenda
+            double posY = 50;
+            for (String linea : todasLasLineas) {
+                Color colorLinea = coloresPorLinea.getOrDefault(linea, Color.GRAY);
+                Rectangle rect = new Rectangle(20, 60, posY, 10);
+                rect.setFill(colorLinea);
+                Text textoLinea = new Text(20 + 20, posY + 10, linea);
+                textoLinea.setFill(Color.BLACK);
+                mapa.getChildren().addAll(rect, textoLinea);
+                posY += 25;
+            }
+
+        } catch (Exception e) {
+            mostrarError("Error al mostrar líneas: " + e.getMessage());
+        }
+    }
+
+    // Metodo para mostrar el árbol de expansión mínima
+    private void mostrarMST(String criterio) {
+        try {
+            // Cambiar al modo de visualización MST
+            modoActual = ModoVisualizacion.MST;
+
+            // Obtener el MST según el criterio seleccionado
+            Set<DefaultWeightedEdge> mstEdges = grafo.kruskalMST(criterio);
+
+            if (mstEdges.isEmpty()) {
+                mostrarError("No se pudo calcular el árbol de expansión mínima");
+                return;
+            }
+
+            // Limpiar el mapa
+            mapa.getChildren().clear();
+
+            // Dibujar paradas
+            grafo.getParadas().forEach(p -> {
+                Circle punto = new Circle(p.getX(), p.getY(), 8, Color.GREEN);
+                Label etiqueta = new Label(p.getNombre());
+                etiqueta.setLayoutX(p.getX() + 10);
+                etiqueta.setLayoutY(p.getY() - 15);
+                etiqueta.setTextFill(Color.DARKBLUE);
+                mapa.getChildren().addAll(punto, etiqueta);
+            });
+
+            // Dibujar las aristas del MST
+            double costoTotal = 0;
+
+            // Como no poduedo acceder directamente al grafo interno, vamos a encontrar las rutas que corresponden a las aristas del MST
+            for (Ruta r : grafo.getRutas()) {
+                // aqui  para cada ruta, verificamos si hay una arista correspondiente en el MST
+                for (DefaultWeightedEdge edge : mstEdges) {
+                    DefaultWeightedEdge rutaEdge = null;
+
+                    // Buscar la arista de esta ruta
+                    for (Map.Entry<Ruta, DefaultWeightedEdge> entry : grafo.getEdgeMap().entrySet()) {
+                        if (entry.getKey().equals(r)) {
+                            rutaEdge = entry.getValue();
+                            break;
+                        }
+                    }
+
+                    // si encuntro la arista y coincide con una arista del MST para esto es
+                    if (rutaEdge != null && rutaEdge.equals(edge)) {
+                        // Dibujar esta ruta como parte del MST
+                        Line linea = new Line(
+                                r.getOrigen().getX(), r.getOrigen().getY(),
+                                r.getDestino().getX(), r.getDestino().getY()
+                        );
+                        linea.setStroke(Color.RED);
+                        linea.setStrokeWidth(3);
+                        mapa.getChildren().add(linea);
+
+                        // Añadir el costo de esta arista al costo total
+                        double costoParcial = switch (criterio) {
+                            case "tiempo" -> r.getTiempo();
+                            case "distancia" -> r.getDistancia();
+                            case "costo" -> r.getCosto();
+                            default -> r.getTiempo();
+                        };
+
+                        costoTotal += costoParcial;
+
+                        // Mostrar el costo parcial de esta arista
+                        Text texto = new Text(
+                                (r.getOrigen().getX() + r.getDestino().getX()) / 2,
+                                (r.getOrigen().getY() + r.getDestino().getY()) / 2,
+                                String.format("%.1f", costoParcial)
+                        );
+                        texto.setFill(Color.BLACK);
+                        mapa.getChildren().add(texto);
+
+                        break; // esto es para que una vez encontrada la coincidencia, pasamos a la siguiente ruta
+                    }
+                }
+            }
+
+            // Mostrar información sobre el MST
+            String unidad = switch (criterio) {
+                case "tiempo" -> "min";
+                case "distancia" -> "km";
+                case "costo" -> "$";
+                default -> "";
+            };
+
+            Text titulo = new Text(20, 20, String.format(
+                    "Árbol de Expansión Mínima (MST) - Criterio: %s - Costo Total: %.2f %s",
+                    criterio.toUpperCase(), costoTotal, unidad
+            ));
+            titulo.setFont(Font.font(14));
+            titulo.setFill(Color.BLACK);
+            mapa.getChildren().add(titulo);
+
+        } catch (Exception e) {
+            mostrarError("Error al mostrar MST: " + e.getMessage());
+        }
+    }
+
+    // Metodo auxiliar para calcular el valor total de una ruta según un criterio
     private double calcularValorRuta(List<Parada> ruta, String criterio) {
         if (ruta == null || ruta.size() < 2) return 0;
 
@@ -476,9 +755,9 @@ public class TransporteApp extends Application {
         return total;
     }
 
-    // Método mejorado para resaltar visualmente la ruta en el mapa
+    // Metodo  para resaltar visualmente la ruta en el mapa
     private void resaltarRuta(List<Parada> ruta) {
-        // Primero actualizamos el mapa normal para tener todas las rutas
+        // funcion de actualizar el mapa normal para tener todas las rutas
         actualizarMapa();
 
         // Si no hay ruta válida, no hacemos nada más
@@ -582,7 +861,7 @@ public class TransporteApp extends Application {
                     r.getDestino().getX(), r.getDestino().getY()
             );
 
-            // Usar diferentes colores según la línea
+            // modificador de colores según la línea
             switch (r.getLinea()) {
                 case "L1" -> linea.setStroke(Color.RED);
                 case "L2" -> linea.setStroke(Color.BLUE);
