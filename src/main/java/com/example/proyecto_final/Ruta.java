@@ -10,8 +10,9 @@ public class Ruta {
     private double distancia;
     private double costo;
     private String criterio;
+    private String linea;
 
-    public Ruta(Parada origen, Parada destino, double tiempo, double distancia, double costo) {
+    public Ruta(Parada origen, Parada destino, double tiempo, double distancia, double costo,String linea) {
         if (origen == null || destino == null) throw new IllegalArgumentException("Paradas inválidas");
         if (origen.equals(destino)) throw new IllegalArgumentException("Misma parada");
         if (tiempo <= 0) throw new IllegalArgumentException("Tiempo inválido");
@@ -24,6 +25,7 @@ public class Ruta {
         this.distancia = distancia;
         this.costo = costo;
         this.criterio = "tiempo"; // un Default criterio
+        this.linea = linea != null && !linea.trim().isEmpty() ? linea.trim() : "L1";
     }
 
     // Getters
@@ -33,6 +35,7 @@ public class Ruta {
     public double getDistancia() { return distancia; }
     public double getCosto() { return costo; }
     public String getCriterio() { return criterio; }
+    public String getLinea() { return linea; }
 
     // Setters
     public void setTiempo(double tiempo) {
@@ -54,6 +57,17 @@ public class Ruta {
     public void setCosto(double costo) {
         if (costo < 0) throw new IllegalArgumentException("Costo no puede ser negativo");
         this.costo = costo;
+    }
+
+    public void setLinea(String linea) {
+        if (linea == null || linea.trim().isEmpty())
+            throw new IllegalArgumentException("Línea no puede estar vacía");
+        this.linea = linea.trim();
+    }
+
+    // Metodo para verificar si hay transbordo entre dos rutas
+    public boolean hayTransbordoCon(Ruta otraRuta) {
+        return !this.linea.equals(otraRuta.linea);
     }
 
     @Override
