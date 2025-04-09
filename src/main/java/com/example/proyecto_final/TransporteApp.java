@@ -177,10 +177,21 @@ public class TransporteApp extends Application {
         Button btnMostrarMST = new Button("Mostrar Árbol de Expansión Mínima");
         btnMostrarMST.setOnAction(e -> mostrarMST(cbMSTCriterio.getValue()));
 
+
+        ComboBox<String> cbFloydCriterio = new ComboBox<>(FXCollections.observableArrayList("tiempo", "distancia", "costo"));
+        cbFloydCriterio.setValue("tiempo");
+
+        Button btnMostrarTodasRutas = new Button("Mostrar Todas las Rutas (Floyd-Warshall)");
+        btnMostrarTodasRutas.setOnAction(e -> mostrarTodasLasRutas(cbFloydCriterio.getValue()));
+
+
+
+
         Button btnModoNormal = new Button("Volver a Modo Normal");
         btnModoNormal.setOnAction(e -> {
             modoActual = ModoVisualizacion.NORMAL;
             actualizarMapa();
+
         });
 
         // Listeners
@@ -247,7 +258,12 @@ public class TransporteApp extends Application {
                 btnMostrarLineas,
                 new Label("Criterio para MST:"), cbMSTCriterio,
                 btnMostrarMST,
+                new Label("Criterio para Floyd-Warshall:"), cbFloydCriterio,
+                btnMostrarTodasRutas,
                 btnModoNormal
+
+
+
         );
 
         return new VBox(scrollPane);
@@ -544,6 +560,39 @@ public class TransporteApp extends Application {
             mostrarError("Error: " + e.getMessage());
         }
     }
+    private void mostrarTodasLasRutas(String criterio) {
+        try {
+            Map<Parada, Map<Parada, Double>> todasLasRutas = grafo.floydWarshall(criterio);
+
+            StringBuilder mensaje = new StringBuilder(
+                    String.format("Rutas más cortas entre todas las paradas (criterio: %s):\n\n", criterio)
+            );
+
+            for (Parada origen : todasLasRutas.keySet()) {
+                for (Parada destino : todasLasRutas.get(origen).keySet()) {
+                    double valor = todasLasRutas.get(origen).get(destino);
+                    mensaje.append(String.format("%s → %s = %.2f\n",
+                            origen.getNombre(), destino.getNombre(), valor));
+                }
+                mensaje.append("\n");
+            }
+
+            TextArea textArea = new TextArea(mensaje.toString());
+            textArea.setEditable(false);
+            textArea.setWrapText(true);
+            textArea.setPrefHeight(400);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Resultados Floyd-Warshall");
+            alert.setHeaderText("Rutas más cortas según " + criterio);
+            alert.getDialogPane().setContent(textArea);
+            alert.show();
+
+        } catch (Exception e) {
+            mostrarError("Error al mostrar rutas: " + e.getMessage());
+        }
+    }
+
 
     // Metodo para mostrar líneas de transporte de manera visual
     private void mostrarLineasTransporte() {
