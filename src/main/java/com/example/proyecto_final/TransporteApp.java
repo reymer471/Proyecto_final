@@ -40,7 +40,10 @@ public class TransporteApp extends Application {
         root.setLeft(crearControles());
         root.setCenter(crearPanelCentral());
 
-        stage.setScene(new Scene(root, 1200, 800));
+        Scene scene = new Scene(root, 1200, 800);
+        stage.setScene(scene);
+        stage.setTitle("Sistema de Transporte Inteligente");
+        scene.getRoot().setStyle("-fx-background-color: #B9CBB3; -fx-border-color: #8B4513; -fx-border-width: 2;");
         stage.setTitle("Sistema de Transporte Inteligente");
         stage.show();
     }
@@ -50,6 +53,12 @@ public class TransporteApp extends Application {
         BorderPane panelCentral = new BorderPane();
         panelCentral.setCenter(mapa);
         panelCentral.setBottom(crearLeyenda());
+        // Añade un fondito cremoso y un borde con esquinas redondeadas
+        mapa.setStyle("-fx-background-color: #F5F5DC; " +
+                "-fx-border-color: #8B4513; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 10; " +           // Radio de las esquinas del borde
+                "-fx-background-radius: 10;");        // Radio de las esquinas del fondo
         return panelCentral;
     }
 
@@ -92,8 +101,17 @@ public class TransporteApp extends Application {
     private VBox crearControles() {
         VBox vbox = new VBox(10);
         vbox.setPrefWidth(300);
+        //fondo
+        vbox.setStyle("-fx-background-color: #E6E6FA;");
 
         ScrollPane scrollPane = new ScrollPane(vbox);
+        //para darle estilo tu sabe al scrollpane
+
+        scrollPane.setStyle("-fx-background: #F0F0F0; " +  // Gris muy claro
+                "-fx-border-color: #A9A9A9; " +  // Gris oscuro
+                "-fx-background-radius: 5; " +
+                "-fx-border-radius: 5; " +
+                "-fx-effect: dropshadow(gaussian, #DCDCDC, 10, 0.2, 2, 2);");
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(1000);
 
