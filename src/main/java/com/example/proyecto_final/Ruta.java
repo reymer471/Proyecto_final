@@ -65,6 +65,7 @@ public class Ruta {
         this.linea = linea.trim();
     }
 
+
     // Metodo para verificar si hay transbordo entre dos rutas
     public boolean hayTransbordoCon(Ruta otraRuta) {
         return !this.linea.equals(otraRuta.linea);

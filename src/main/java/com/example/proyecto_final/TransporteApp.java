@@ -1,5 +1,6 @@
 package com.example.proyecto_final;
 
+import eu.hansolo.fx.heatmap.Launcher;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -40,7 +41,7 @@ public class TransporteApp extends Application {
         root.setLeft(crearControles());
         root.setCenter(crearPanelCentral());
 
-        Scene scene = new Scene(root, 1200, 800);
+        Scene scene = new Scene(root, 1000, 600);
         stage.setScene(scene);
         stage.setTitle("Sistema de Transporte Inteligente");
         scene.getRoot().setStyle("-fx-background-color: #B9CBB3; -fx-border-color: #8B4513; -fx-border-width: 2;");
@@ -974,3 +975,4 @@ public class TransporteApp extends Application {
         launch(args);
     }
 }
+

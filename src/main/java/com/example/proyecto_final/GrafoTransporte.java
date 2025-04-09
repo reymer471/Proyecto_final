@@ -11,6 +11,15 @@ import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.jgrapht.graph.AsUndirectedGraph;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.jgrapht.graph.SimpleWeightedGraph;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class GrafoTransporte {
@@ -21,7 +30,7 @@ public class GrafoTransporte {
     private final Map<String, List<Ruta>> rutasPorLinea; // mapa de líneas y sus rutas
 
     public GrafoTransporte() {
-        grafo = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
+        grafo = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
         paradas = FXCollections.observableArrayList();
         rutas = FXCollections.observableArrayList();
         edgeMap = new HashMap<>();
@@ -360,5 +369,73 @@ public class GrafoTransporte {
     }
     public Map<Ruta, DefaultWeightedEdge> getEdgeMap() {
         return edgeMap;
+    }
+
+    public void guardarRutasEnArchivo(String archivo) throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(archivo))) {
+            for (Ruta r : rutas) {
+                writer.printf("%s;%s;%.2f;%.2f;%.2f;%s%n",
+                        r.getOrigen().getId(),
+                        r.getDestino().getId(),
+                        r.getTiempo(),
+                        r.getDistancia(),
+                        r.getCosto(),
+                        r.getLinea());
+            }
+        }
+    }
+
+    public void cargarParadasDesdeArchivo(String archivo) throws IOException {
+        for (Parada p : new ArrayList<>(grafo.vertexSet())) {
+            grafo.removeVertex(p);
+        }
+        paradas.clear();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(";");
+                if (partes.length >= 4) {
+                    Parada p = new Parada(partes[0], partes[1],
+                            Double.parseDouble(partes[2]),
+                            Double.parseDouble(partes[3]));
+                    agregarParada(p);
+                }
+            }
+        }
+    }
+
+    public void cargarRutasDesdeArchivo(String archivo) throws IOException {
+        for (DefaultWeightedEdge edge : new ArrayList<>(grafo.edgeSet())) {
+            grafo.removeEdge(edge);
+        }
+        rutas.clear();
+        edgeMap.clear();
+        rutasPorLinea.clear();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(";");
+                if (partes.length >= 6) {
+                    Parada origen = buscarParadaPorId(partes[0]);
+                    Parada destino = buscarParadaPorId(partes[1]);
+                    if (origen != null && destino != null) {
+                        Ruta r = new Ruta(origen, destino,
+                                Double.parseDouble(partes[2]),
+                                Double.parseDouble(partes[3]),
+                                Double.parseDouble(partes[4]),
+                                partes[5]);
+                        agregarRuta(r);
+                    }
+                }
+            }
+        }
+    }
+    private Parada buscarParadaPorId(String id) {
+        for (Parada p : paradas) {
+            if (p.getId().equals(id)) return p;
+        }
+        return null;
     }
 }
