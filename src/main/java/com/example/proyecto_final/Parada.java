@@ -1,8 +1,10 @@
 package com.example.proyecto_final;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Parada {
+public class Parada implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String id;
     private String nombre;
     private final double x;

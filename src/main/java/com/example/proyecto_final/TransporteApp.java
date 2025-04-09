@@ -1,6 +1,5 @@
 package com.example.proyecto_final;
 
-import eu.hansolo.fx.heatmap.Launcher;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Optional;
 
 public class TransporteApp extends Application {
     private final GrafoTransporte grafo = new GrafoTransporte();
@@ -41,12 +41,26 @@ public class TransporteApp extends Application {
         root.setLeft(crearControles());
         root.setCenter(crearPanelCentral());
 
+        // Crear la barra de menú
+        MenuBar menuBar = crearMenuBar();
+        root.setTop(menuBar);
+
         Scene scene = new Scene(root, 1000, 600);
         stage.setScene(scene);
         stage.setTitle("Sistema de Transporte Inteligente");
         scene.getRoot().setStyle("-fx-background-color: #B9CBB3; -fx-border-color: #8B4513; -fx-border-width: 2;");
         stage.setTitle("Sistema de Transporte Inteligente");
+
+        // Intentar cargar datos guardados al iniciar
+        cargarDatosGuardados();
+
         stage.show();
+
+        // Registrar un manejador para guardar datos al cerrar la aplicación
+        stage.setOnCloseRequest(e -> {
+            e.consume(); // Prevenir cierre automático
+            confirmarSalir(stage);
+        });
     }
 
     private Pane crearPanelCentral() {
@@ -93,6 +107,119 @@ public class TransporteApp extends Application {
         leyenda.getChildren().add(modoLabel);
 
         return leyenda;
+    }
+
+    // Método para crear la barra de menú
+    private MenuBar crearMenuBar() {
+        MenuBar menuBar = new MenuBar();
+
+        // Menú Archivo
+        Menu menuArchivo = new Menu("Archivo");
+
+        MenuItem itemGuardar = new MenuItem("Guardar Datos");
+        itemGuardar.setOnAction(e -> guardarDatos());
+
+        MenuItem itemCargar = new MenuItem("Cargar Datos");
+        itemCargar.setOnAction(e -> cargarDatos());
+
+        MenuItem itemSalir = new MenuItem("Salir");
+        itemSalir.setOnAction(e -> confirmarSalir((Stage) menuBar.getScene().getWindow()));
+
+        menuArchivo.getItems().addAll(itemGuardar, itemCargar, new SeparatorMenuItem(), itemSalir);
+
+        // Menú Ayuda
+        Menu menuAyuda = new Menu("Ayuda");
+
+        MenuItem itemAcerca = new MenuItem("Acerca de");
+        itemAcerca.setOnAction(e -> mostrarAcercaDe());
+
+        menuAyuda.getItems().add(itemAcerca);
+
+        menuBar.getMenus().addAll(menuArchivo, menuAyuda);
+
+        return menuBar;
+    }
+
+    // Método para guardar datos
+    private void guardarDatos() {
+        boolean exito = grafo.guardarDatos();
+
+        if (exito) {
+            mostrarMensaje("Datos Guardados", "Los datos han sido guardados correctamente.", Alert.AlertType.INFORMATION);
+        } else {
+            mostrarMensaje("Error", "Hubo un problema al guardar los datos.", Alert.AlertType.ERROR);
+        }
+    }
+
+    // Método para cargar datos
+    private void cargarDatos() {
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Cargar Datos");
+        confirmacion.setHeaderText("¿Está seguro de cargar los datos?");
+        confirmacion.setContentText("Los datos actuales serán reemplazados por los guardados previamente.");
+
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+
+        if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
+            cargarDatosGuardados();
+        }
+    }
+
+    // Método para cargar datos guardados
+    private void cargarDatosGuardados() {
+        boolean exito = grafo.cargarDatos();
+
+        if (exito) {
+            actualizarMapa();
+            mostrarMensaje("Datos Cargados", "Los datos han sido cargados correctamente.", Alert.AlertType.INFORMATION);
+        }
+    }
+
+    // Método para confirmar salida y ofrecer guardar cambios
+    private void confirmarSalir(Stage stage) {
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Confirmar Salida");
+        confirmacion.setHeaderText("¿Desea guardar los datos antes de salir?");
+        confirmacion.setContentText("Si no guarda, los cambios realizados se perderán.");
+
+        ButtonType btnGuardarSalir = new ButtonType("Guardar y Salir");
+        ButtonType btnSalirSinGuardar = new ButtonType("Salir sin Guardar");
+        ButtonType btnCancelar = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        confirmacion.getButtonTypes().setAll(btnGuardarSalir, btnSalirSinGuardar, btnCancelar);
+
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+
+        if (resultado.isPresent()) {
+            if (resultado.get() == btnGuardarSalir) {
+                boolean guardadoExitoso = grafo.guardarDatos();
+                if (guardadoExitoso) {
+                    stage.close();
+                } else {
+                    mostrarMensaje("Error", "No se pudieron guardar los datos. ¿Desea salir de todos modos?", Alert.AlertType.ERROR);
+                }
+            } else if (resultado.get() == btnSalirSinGuardar) {
+                stage.close();
+            }
+        }
+    }
+
+    // Método para mostrar información "Acerca de"
+    private void mostrarAcercaDe() {
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setTitle("Acerca de");
+        info.setHeaderText("Sistema de Transporte Inteligente");
+        info.setContentText("Versión 1.0\n\nDesarrollado para gestionar y optimizar rutas de transporte público.");
+        info.showAndWait();
+    }
+
+    // Método para mostrar mensajes al usuario
+    private void mostrarMensaje(String titulo, String mensaje, Alert.AlertType tipo) {
+        Alert alert = new Alert(tipo);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
     }
 
 
@@ -538,7 +665,7 @@ public class TransporteApp extends Application {
                         mensaje.append(lineasUtilizadas.get(j));
                         if (j < lineasUtilizadas.size() - 1) {
                             mensaje.append(", ");
-                        }
+                        }//hola
                     }
                     mensaje.append("\n");
                 }
@@ -975,4 +1102,3 @@ public class TransporteApp extends Application {
         launch(args);
     }
 }
-

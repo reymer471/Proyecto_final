@@ -1,9 +1,11 @@
 package com.example.proyecto_final;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class Ruta {
+public class Ruta implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Parada origen;
     private final Parada destino;
     private double tiempo;
