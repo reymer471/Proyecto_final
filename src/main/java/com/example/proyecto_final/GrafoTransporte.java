@@ -202,30 +202,15 @@ public class GrafoTransporte {
 
     // Kruskal - para optimizar la red (minimizar infraestructura)
     public Set<DefaultWeightedEdge> kruskalMST(String criterio) {
+
         aplicarCriterio(criterio);
-
-        // Para MST aqui se convierte a no dirigido
-        AsUndirectedGraph<Parada, DefaultWeightedEdge> grafoNoDir =
-                new AsUndirectedGraph<>(grafo);
-
-        KruskalMinimumSpanningTree<Parada, DefaultWeightedEdge> kruskal =
-                new KruskalMinimumSpanningTree<>(grafoNoDir);
+        KruskalMinimumSpanningTree<Parada, DefaultWeightedEdge> kruskal = new KruskalMinimumSpanningTree<>(grafo);
 
         return kruskal.getSpanningTree().getEdges();
     }
 
-    // Prim - alternativa a Kruskal, a veces más rápido
-    public Set<DefaultWeightedEdge> primMST(String criterio) {
-        aplicarCriterio(criterio);
 
-        AsUndirectedGraph<Parada, DefaultWeightedEdge> grafoNoDir =
-                new AsUndirectedGraph<>(grafo);
 
-        PrimMinimumSpanningTree<Parada, DefaultWeightedEdge> prim =
-                new PrimMinimumSpanningTree<>(grafoNoDir);
-
-        return prim.getSpanningTree().getEdges();
-    }
 
     // Obtener la secuencia de paradas, no solo el costo
     public List<Parada> obtenerRutaCompleta(Parada origen, Parada destino, String criterio) {
@@ -237,7 +222,7 @@ public class GrafoTransporte {
             List<Parada> ruta = dijkstra.getPath(origen, destino).getVertexList();
             return ruta;
         } catch (Exception e) {
-            return null; // no hay ruta
+            return null;
         }
     }
 
@@ -246,7 +231,7 @@ public class GrafoTransporte {
                                                        String criterio, int maxAlternativas) {
         List<List<Parada>> rutasAlternativas = new ArrayList<>();
 
-        // Primero la ruta principal
+
         List<Parada> rutaPrincipal = obtenerRutaCompleta(origen, destino, criterio);
 
         if (rutaPrincipal != null) {
@@ -273,13 +258,6 @@ public class GrafoTransporte {
         return rutasAlternativas;
     }
 
-    // Calcular transbordos básico - basado en número de paradas
-    public int calcularTransbordos(List<Parada> ruta) {
-        if (ruta == null || ruta.size() <= 1) {
-            return 0;
-        }
-        return ruta.size() - 1; // cada parada nueva = un transbordo potencial
-    }
 
     // Calcular transbordos real - considerando cambios de línea
     public int calcularTransbordosReales(List<Parada> ruta) {
@@ -312,18 +290,7 @@ public class GrafoTransporte {
         return transbordos;
     }
 
-    // Obtener las líneas que pasan por una parada
-    public List<String> getLineasEnParada(Parada parada) {
-        Set<String> lineas = new HashSet<>();
 
-        for (Ruta r : rutas) {
-            if (r.getOrigen().equals(parada) || r.getDestino().equals(parada)) {
-                lineas.add(r.getLinea());
-            }
-        }
-
-        return new ArrayList<>(lineas);
-    }
 
     // Obtener las líneas utilizadas en una ruta
     public List<String> getLineasEnRuta(List<Parada> ruta) {

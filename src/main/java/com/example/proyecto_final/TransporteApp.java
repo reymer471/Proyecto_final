@@ -713,7 +713,6 @@ public class TransporteApp extends Application {
             StringBuilder mensaje = new StringBuilder(
                     String.format("Rutas más cortas entre todas las paradas (criterio: %s):\n\n", criterio)
             );
-//hola//
             for (Parada origen : todasLasRutas.keySet()) {
                 for (Parada destino : todasLasRutas.get(origen).keySet()) {
                     double valor = todasLasRutas.get(origen).get(destino);
