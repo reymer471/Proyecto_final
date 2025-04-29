@@ -305,7 +305,7 @@ public class TransporteApp extends Application {
         // --- CALCULAR RUTA ---
         ComboBox<Parada> cbRutaOrigen = new ComboBox<>();
         ComboBox<Parada> cbRutaDestino = new ComboBox<>();
-        ComboBox<String> cbRutaCriterio = new ComboBox<>(FXCollections.observableArrayList("tiempo", "distancia", "costo", "transbordos"));
+        ComboBox<String> cbRutaCriterio = new ComboBox<>(FXCollections.observableArrayList("tiempo", "distancia", "costo"));
         cbRutaCriterio.setValue("tiempo");
         Button btnCalcularRuta = new Button("Calcular Ruta Óptima");
         btnCalcularRuta.setOnAction(e -> calcularRutaOptima(cbRutaOrigen, cbRutaDestino, cbRutaCriterio));
@@ -327,8 +327,7 @@ public class TransporteApp extends Application {
         ComboBox<String> cbFloydCriterio = new ComboBox<>(FXCollections.observableArrayList("tiempo", "distancia", "costo"));
         cbFloydCriterio.setValue("tiempo");
 
-        Button btnMostrarTodasRutas = new Button("Mostrar Todas las Rutas (Floyd-Warshall)");
-        btnMostrarTodasRutas.setOnAction(e -> mostrarTodasLasRutas(cbFloydCriterio.getValue()));
+
 
 
 
@@ -404,8 +403,6 @@ public class TransporteApp extends Application {
                 btnMostrarLineas,
                 new Label("Criterio para MST:"), cbMSTCriterio,
                 btnMostrarMST,
-                new Label("Criterio para Floyd-Warshall:"), cbFloydCriterio,
-                btnMostrarTodasRutas,
                 btnModoNormal
 
 
@@ -563,25 +560,18 @@ public class TransporteApp extends Application {
                 case "tiempo" -> "minutos";
                 case "distancia" -> "km";
                 case "costo" -> "$";
-                case "transbordos" -> "transbordos";
                 default -> "";
             };
 
             // Obtener la ruta completa (secuencia de paradas)
             List<Parada> rutaCompleta = grafo.obtenerRutaCompleta(o, d, c);
 
-            // Calcular transbordos reales
-            int transbordosReales = grafo.calcularTransbordosReales(rutaCompleta);
 
             // Crear el mensaje para mostrar al usuario
             StringBuilder mensaje = new StringBuilder();
             mensaje.append(String.format("Criterio: %s\nValor: %.2f %s\n",
                     c.toUpperCase(), costo, unidad));
 
-            // Añadir información de transbordos
-            if (!c.equals("transbordos")) {
-                mensaje.append(String.format("Transbordos: %d\n\n", transbordosReales));
-            }
 
             // Añadir información de líneas
             List<String> lineasUtilizadas = grafo.getLineasEnRuta(rutaCompleta);
@@ -649,13 +639,13 @@ public class TransporteApp extends Application {
                 double tiempoTotal = calcularValorRuta(ruta, "tiempo");
                 double distanciaTotal = calcularValorRuta(ruta, "distancia");
                 double costoTotal = calcularValorRuta(ruta, "costo");
-                int transbordos = grafo.calcularTransbordosReales(ruta);
+
 
                 mensaje.append("Ruta ").append(i + 1).append(":\n");
                 mensaje.append(String.format("• Tiempo: %.2f min\n", tiempoTotal));
                 mensaje.append(String.format("• Distancia: %.2f km\n", distanciaTotal));
                 mensaje.append(String.format("• Costo: $%.2f\n", costoTotal));
-                mensaje.append(String.format("• Transbordos: %d\n", transbordos));
+
 
                 // Añadir información de líneas
                 List<String> lineasUtilizadas = grafo.getLineasEnRuta(ruta);
@@ -706,37 +696,8 @@ public class TransporteApp extends Application {
             mostrarError("Error: " + e.getMessage());
         }
     }
-    private void mostrarTodasLasRutas(String criterio) {
-        try {
-            Map<Parada, Map<Parada, Double>> todasLasRutas = grafo.floydWarshall(criterio);
 
-            StringBuilder mensaje = new StringBuilder(
-                    String.format("Rutas más cortas entre todas las paradas (criterio: %s):\n\n", criterio)
-            );
-            for (Parada origen : todasLasRutas.keySet()) {
-                for (Parada destino : todasLasRutas.get(origen).keySet()) {
-                    double valor = todasLasRutas.get(origen).get(destino);
-                    mensaje.append(String.format("%s → %s = %.2f\n",
-                            origen.getNombre(), destino.getNombre(), valor));
-                }
-                mensaje.append("\n");
-            }
 
-            TextArea textArea = new TextArea(mensaje.toString());
-            textArea.setEditable(false);
-            textArea.setWrapText(true);
-            textArea.setPrefHeight(400);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Resultados Floyd-Warshall");
-            alert.setHeaderText("Rutas más cortas según " + criterio);
-            alert.getDialogPane().setContent(textArea);
-            alert.show();
-
-        } catch (Exception e) {
-            mostrarError("Error al mostrar rutas: " + e.getMessage());
-        }
-    }
 
 
     // Metodo para mostrar líneas de transporte de manera visual
@@ -929,7 +890,7 @@ public class TransporteApp extends Application {
         if (ruta == null || ruta.size() < 2) return 0;
 
         double total = 0;
-        for (int i = 0; i < ruta.size() - 1; i++) {
+        for (int i = 0; i < ruta.size() -1; i++) {
             Parada actual = ruta.get(i);
             Parada siguiente = ruta.get(i + 1);
 
